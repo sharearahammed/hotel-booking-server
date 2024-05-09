@@ -59,7 +59,7 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
 
-    const hotelCollection = client.db("hotelBookingDB").collection("rooms");
+    const hotelCollection = client.db("hotelBookingDB").collection("featuredRooms");
 
     // auth related api
     app.post("/jwt", async (req, res) => {
@@ -82,11 +82,11 @@ async function run() {
     });
 
 
-
-
-
-
-
+    app.get('/featuredRoom',async(req,res)=>{
+      const cursor = hotelCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    })
 
 
 
@@ -101,7 +101,7 @@ async function run() {
     );
   } finally {
     // Ensures that the client will close when you finish/error
-    await client.close();
+    // await client.close();
   }
 }
 run().catch(console.dir);
