@@ -60,6 +60,7 @@ async function run() {
     // await client.connect();
 
     const hotelCollection = client.db("hotelBookingDB").collection("featuredRooms");
+    const roomsCollection = client.db("hotelBookingDB").collection("rooms");
 
     // auth related api
     app.post("/jwt", async (req, res) => {
@@ -85,6 +86,22 @@ async function run() {
     app.get('/featuredRoom',async(req,res)=>{
       const cursor = hotelCollection.find();
       const result = await cursor.toArray();
+      res.send(result);
+    })
+
+    app.get('/rooms',async(req,res)=>{
+      const cursor = roomsCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    })
+
+    app.get('/rooms/:room_type',async(req,res)=>{
+      const roomType = req.params.room_type;
+      console.log(roomType)
+      const query = {room_type : roomType}
+      const r = roomsCollection.find(query);
+      const result = await r.toArray()
+      console.log(result)
       res.send(result);
     })
 
