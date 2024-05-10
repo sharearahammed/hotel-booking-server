@@ -17,7 +17,7 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.netgysa.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -89,13 +89,32 @@ async function run() {
       res.send(result);
     })
 
-    app.get('/rooms',async(req,res)=>{
+    app.get('/rooms',verifyToken,async(req,res)=>{
       const cursor = roomsCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     })
 
-    app.get('/rooms/:room_type',async(req,res)=>{
+  //   app.get('/rooms', verifyToken, async (req, res) => {
+  //     // Extracting query parameters for price range
+  //     const minPrice = req.query.minPrice ? parseFloat(req.query.minPrice) : 0;
+  //     const maxPrice = req.query.maxPrice ? parseFloat(req.query.maxPrice) : Number.MAX_SAFE_INTEGER;
+  
+  //     // Constructing the filter based on price range
+  //     const filter = {
+  //         price: {
+  //             $gte: minPrice,
+  //             $lte: maxPrice
+  //         }
+  //     };
+  
+  //     // Finding rooms that match the filter
+  //     const cursor = roomsCollection.find(filter);
+  //     const result = await cursor.toArray();
+  //     res.send(result);
+  // });
+
+    app.get('/rooms/:room_type',verifyToken,async(req,res)=>{
       const roomType = req.params.room_type;
       console.log(roomType)
       const query = {room_type : roomType}
@@ -105,6 +124,12 @@ async function run() {
       res.send(result);
     })
 
+    app.get("/room/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {_id : new ObjectId(id)};
+      const result = await roomsCollection.findOne(query);
+      res.send(result);
+    });
 
 
 
