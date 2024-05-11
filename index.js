@@ -135,11 +135,50 @@ async function run() {
     // Post bookings
     app.post("/bookings", async (req, res) => {
       const newBooking = req.body;
-      console.log(newCountry);
+      console.log(newBooking);
       const result = await roomBookingCollection.insertOne(newBooking);
+      console.log(result)
       res.send(result);
     });
 
+    // patch vailable status
+    app.patch('/rooms/:id',async(req,res)=>{
+      const id = req.params.id;
+      const availability = req.body;
+      const query = { _id : new ObjectId(id) }
+      const updateDoc = { 
+        $set: availability,
+      }
+      const result = await roomsCollection.updateOne(query,updateDoc)
+      res.send(result)
+    })
+
+    // booking
+
+    app.get('/bookings',async(req,res)=>{
+      const cursor = roomBookingCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    })
+    // get booking data using user email
+    app.get('/bookings/:email',async(req,res)=>{
+      const email = req.params.email;
+      console.log(email)
+      const query = {email : email}
+      const r = roomBookingCollection.find(query);
+      const result = await r.toArray()
+      console.log(result)
+      res.send(result);
+    })
+
+    // delete booking by id
+    app.delete("/bookings/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const query = { _id: new ObjectId(id) };
+      const result = await roomBookingCollection.deleteOne(query);
+      res.send(result);
+    });
 
 
 
