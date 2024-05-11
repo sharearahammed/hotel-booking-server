@@ -61,6 +61,7 @@ async function run() {
 
     const hotelCollection = client.db("hotelBookingDB").collection("featuredRooms");
     const roomsCollection = client.db("hotelBookingDB").collection("rooms");
+    const roomBookingCollection = client.db("hotelBookingDB").collection("bookings");
 
     // auth related api
     app.post("/jwt", async (req, res) => {
@@ -131,6 +132,13 @@ async function run() {
       res.send(result);
     });
 
+    // Post bookings
+    app.post("/bookings", async (req, res) => {
+      const newBooking = req.body;
+      console.log(newCountry);
+      const result = await roomBookingCollection.insertOne(newBooking);
+      res.send(result);
+    });
 
 
 
