@@ -9,7 +9,10 @@ const cookieParser = require("cookie-parser");
 app.use(
   cors({
     // origin: ["http://localhost:5173"],
-    origin: ["http://localhost:5173"],
+    origin: ["http://localhost:5173",
+      "https://hotel-booking-server-psi.vercel.app",
+      "https://fascinating-tapioca-72af1c.netlify.app"
+    ],
     credentials: true,
   })
 );
@@ -59,9 +62,9 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
 
-    const hotelCollection = client.db("hotelBookingDB").collection("featuredRooms");
     const roomsCollection = client.db("hotelBookingDB").collection("rooms");
     const roomBookingCollection = client.db("hotelBookingDB").collection("bookings");
+    const bookingReviewCollection = client.db("hotelBookingDB").collection("reviews");
 
     // auth related api
     app.post("/jwt", async (req, res) => {
@@ -84,13 +87,7 @@ async function run() {
     });
 
 
-    app.get('/featuredRoom',async(req,res)=>{
-      const cursor = hotelCollection.find();
-      const result = await cursor.toArray();
-      res.send(result);
-    })
-
-    app.get('/rooms',verifyToken,async(req,res)=>{
+    app.get('/rooms',async(req,res)=>{
       const cursor = roomsCollection.find();
       const result = await cursor.toArray();
       res.send(result);
@@ -115,17 +112,17 @@ async function run() {
   //     res.send(result);
   // });
 
-    app.get('/rooms/:room_type',verifyToken,async(req,res)=>{
+    app.get('/rooms/:room_type',async(req,res)=>{
       const roomType = req.params.room_type;
-      console.log(roomType)
+      // console.log(roomType)
       const query = {room_type : roomType}
       const r = roomsCollection.find(query);
       const result = await r.toArray()
-      console.log(result)
+      // console.log(result)
       res.send(result);
     })
 
-    app.get("/room/:id", async (req, res) => {
+    app.get("/room/:id",verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = {_id : new ObjectId(id)};
       const result = await roomsCollection.findOne(query);
@@ -135,9 +132,9 @@ async function run() {
     // Post bookings
     app.post("/bookings", async (req, res) => {
       const newBooking = req.body;
-      console.log(newBooking);
+      // console.log(newBooking);
       const result = await roomBookingCollection.insertOne(newBooking);
-      console.log(result)
+      // console.log(result)
       res.send(result);
     });
 
@@ -153,33 +150,69 @@ async function run() {
       res.send(result)
     })
 
-    // booking
 
-    app.get('/bookings',async(req,res)=>{
+    // booking
+    app.get('/bookings',verifyToken,async(req,res)=>{
       const cursor = roomBookingCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     })
     // get booking data using user email
-    app.get('/bookings/:email',async(req,res)=>{
+    app.get('/bookings/:email',verifyToken,async(req,res)=>{
       const email = req.params.email;
-      console.log(email)
+      // console.log(email)
       const query = {email : email}
       const r = roomBookingCollection.find(query);
       const result = await r.toArray()
-      console.log(result)
+      // console.log(result)
       res.send(result);
     })
 
     // delete booking by id
     app.delete("/bookings/:id", async (req, res) => {
       const id = req.params.id;
-      console.log(id);
+      // console.log(id);
       const query = { _id: new ObjectId(id) };
       const result = await roomBookingCollection.deleteOne(query);
       res.send(result);
     });
 
+    // update by patch booking date
+    app.patch('/bookings/:id',async(req,res)=>{
+      const id = req.params.id;
+      console.log(id)
+      const date = req.body;
+      const query = { _id : new ObjectId(id) }
+      const updateDoc = { 
+        $set: date,
+      }
+      const result = await roomBookingCollection.updateOne(query,updateDoc)
+      res.send(result)
+    })
+
+    //get review 
+    app.get('/reviews',async(req,res)=>{
+      const cursor = bookingReviewCollection.find().sort({timestamp:-1});
+      const result = await cursor.toArray();
+      res.send(result);
+    })
+    //get review by id
+    app.get("/review/:room_id", async (req, res) => {
+      const room_id = req.params.room_id;
+      const query = {room_id : room_id};
+      const cursor = bookingReviewCollection.find(query);
+      const result = await cursor.toArray()
+      res.send(result);
+    });
+
+    // post booking review 
+    app.post("/reviews", async (req, res) => {
+      const newReview = req.body;
+      // console.log(newReview);
+      const result = await bookingReviewCollection.insertOne(newReview);
+      // console.log(result)
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
