@@ -87,30 +87,31 @@ async function run() {
     });
 
 
-    app.get('/rooms',async(req,res)=>{
-      const cursor = roomsCollection.find();
+    // app.get('/rooms',async(req,res)=>{
+    //   const cursor = roomsCollection.find();
+    //   const result = await cursor.toArray();
+    //   res.send(result);
+    // })
+
+    app.get('/rooms', async (req, res) => {
+      const minPrice = parseInt(req.query.minPrice);
+      const maxPrice = parseInt(req.query.maxPrice);
+      let query = {};
+      if (!isNaN(minPrice) && !isNaN(maxPrice)) {
+        // If both minPrice and maxPrice are provided, filter by price range
+        query = {
+          $and: [
+            { minPrice: { $lte: maxPrice } },
+            { maxPrice: { $gte: minPrice } }
+          ]
+        };
+      }
+      const cursor = roomsCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
-    })
+    });
+    
 
-  //   app.get('/rooms', verifyToken, async (req, res) => {
-  //     // Extracting query parameters for price range
-  //     const minPrice = req.query.minPrice ? parseFloat(req.query.minPrice) : 0;
-  //     const maxPrice = req.query.maxPrice ? parseFloat(req.query.maxPrice) : Number.MAX_SAFE_INTEGER;
-  
-  //     // Constructing the filter based on price range
-  //     const filter = {
-  //         price: {
-  //             $gte: minPrice,
-  //             $lte: maxPrice
-  //         }
-  //     };
-  
-  //     // Finding rooms that match the filter
-  //     const cursor = roomsCollection.find(filter);
-  //     const result = await cursor.toArray();
-  //     res.send(result);
-  // });
 
     app.get('/rooms/:room_type',async(req,res)=>{
       const roomType = req.params.room_type;
