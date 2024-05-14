@@ -34,18 +34,18 @@ const client = new MongoClient(uri, {
 
 const verifyToken = async (req, res, next) => {
   const token = req?.cookies?.token;
-  console.log("token in middleware: ", token);
+  // console.log("token in middleware: ", token);
   if (!token) {
     return res.status(401).send({ message: "unauthorized access" });
   }
   jwt.verify(token, process.env.ACCESS_TOKN_SECRET, (err, decoded) => {
     // error
     if (err) {
-      console.log(err);
+      // console.log(err);
       return res.status(401).send({ message: "unauthorized access" });
     }
     // if token is valid then it woult be decoded
-    console.log("value in the token", decoded);
+    // console.log("value in the token", decoded);
     req.user = decoded;
     next();
   });
@@ -69,7 +69,7 @@ async function run() {
     // auth related api
     app.post("/jwt", async (req, res) => {
       const user = req.body;
-      console.log("user for token", user);
+      // console.log("user for token", user);
       const token = jwt.sign(user, process.env.ACCESS_TOKN_SECRET, {
         expiresIn: "1h",
       });
@@ -80,7 +80,7 @@ async function run() {
     //clearing Token
     app.post("/logout", async (req, res) => {
       const user = req.body;
-      console.log("logging out", user);
+      // console.log("logging out", user);
       res
         .clearCookie("token", { ...cookieOptions, maxAge: 0 })
         .send({ success: true });
@@ -130,15 +130,6 @@ async function run() {
       res.send(result);
     });
 
-    // Post bookings
-    app.post("/bookings", async (req, res) => {
-      const newBooking = req.body;
-      // console.log(newBooking);
-      const result = await roomBookingCollection.insertOne(newBooking);
-      // console.log(result)
-      res.send(result);
-    });
-
     // patch vailable status
     app.patch('/rooms/:id',async(req,res)=>{
       const id = req.params.id;
@@ -152,6 +143,15 @@ async function run() {
     })
 
 
+        // Post bookings
+        app.post("/bookings", async (req, res) => {
+          const newBooking = req.body;
+          // console.log(newBooking);
+          const result = await roomBookingCollection.insertOne(newBooking);
+          // console.log(result)
+          res.send(result);
+        });
+
     // booking
     app.get('/bookings',verifyToken,async(req,res)=>{
       const cursor = roomBookingCollection.find();
@@ -162,9 +162,19 @@ async function run() {
     app.get('/bookings/:email',verifyToken,async(req,res)=>{
       const email = req.params.email;
       // console.log(email)
-      const query = {email : email}
+      const query = {email : email};
       const r = roomBookingCollection.find(query);
       const result = await r.toArray()
+      // console.log(result)
+      res.send(result);
+    })
+
+    //get bookings by id
+    app.get('/booking/:room_id',verifyToken,async(req,res)=>{
+      const id = req.params.room_id;
+      // console.log(email)
+      const query = { room_id: id };
+      const result =  await roomBookingCollection.findOne(query);
       // console.log(result)
       res.send(result);
     })
@@ -181,7 +191,7 @@ async function run() {
     // update by patch booking date
     app.patch('/bookings/:id',async(req,res)=>{
       const id = req.params.id;
-      console.log(id)
+      // console.log(id)
       const date = req.body;
       const query = { _id : new ObjectId(id) }
       const updateDoc = { 
