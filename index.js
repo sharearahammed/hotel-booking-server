@@ -11,7 +11,7 @@ app.use(
     // origin: ["http://localhost:5173"],
     origin: ["http://localhost:5173",
       "https://hotel-booking-server-psi.vercel.app",
-      "https://fascinating-tapioca-72af1c.netlify.app"
+      "https://sunshinecity-hotelbooking.netlify.app"
     ],
     credentials: true,
   })
