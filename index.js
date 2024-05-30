@@ -5,13 +5,15 @@ const cors = require("cors");
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 app.use(
   cors({
     // origin: ["http://localhost:5173"],
-    origin: ["http://localhost:5173",
+    origin: [
+      "http://localhost:5173",
       "https://hotel-booking-server-psi.vercel.app",
-      "https://sunshinecity-hotelbooking.netlify.app"
+      "https://sunshinecity-hotelbooking.netlify.app",
     ],
     credentials: true,
   })
@@ -63,8 +65,12 @@ async function run() {
     // await client.connect();
 
     const roomsCollection = client.db("hotelBookingDB").collection("rooms");
-    const roomBookingCollection = client.db("hotelBookingDB").collection("bookings");
-    const bookingReviewCollection = client.db("hotelBookingDB").collection("reviews");
+    const roomBookingCollection = client
+      .db("hotelBookingDB")
+      .collection("bookings");
+    const bookingReviewCollection = client
+      .db("hotelBookingDB")
+      .collection("reviews");
 
     // auth related api
     app.post("/jwt", async (req, res) => {
@@ -73,9 +79,7 @@ async function run() {
       const token = jwt.sign(user, process.env.ACCESS_TOKN_SECRET, {
         expiresIn: "1h",
       });
-      res
-        .cookie("token", token, cookieOptions)
-        .send({ success: true });
+      res.cookie("token", token, cookieOptions).send({ success: true });
     });
     //clearing Token
     app.post("/logout", async (req, res) => {
@@ -86,14 +90,13 @@ async function run() {
         .send({ success: true });
     });
 
-
     // app.get('/rooms',async(req,res)=>{
     //   const cursor = roomsCollection.find();
     //   const result = await cursor.toArray();
     //   res.send(result);
     // })
 
-    app.get('/rooms', async (req, res) => {
+    app.get("/rooms", async (req, res) => {
       const minPrice = parseInt(req.query.minPrice);
       const maxPrice = parseInt(req.query.maxPrice);
       let query = {};
@@ -102,82 +105,79 @@ async function run() {
         query = {
           $and: [
             { minPrice: { $lte: maxPrice } },
-            { maxPrice: { $gte: minPrice } }
-          ]
+            { maxPrice: { $gte: minPrice } },
+          ],
         };
       }
       const cursor = roomsCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
     });
-    
 
-
-    app.get('/rooms/:room_type',async(req,res)=>{
+    app.get("/rooms/:room_type", async (req, res) => {
       const roomType = req.params.room_type;
       // console.log(roomType)
-      const query = {room_type : roomType}
+      const query = { room_type: roomType };
       const r = roomsCollection.find(query);
-      const result = await r.toArray()
+      const result = await r.toArray();
       // console.log(result)
       res.send(result);
-    })
+    });
 
-    app.get("/room/:id",verifyToken, async (req, res) => {
+    app.get("/room/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
-      const query = {_id : new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const result = await roomsCollection.findOne(query);
       res.send(result);
     });
 
     // patch vailable status
-    app.patch('/rooms/:id',async(req,res)=>{
+    app.patch("/rooms/:id", async (req, res) => {
       const id = req.params.id;
       const availability = req.body;
-      const query = { _id : new ObjectId(id) }
-      const updateDoc = { 
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
         $set: availability,
-      }
-      const result = await roomsCollection.updateOne(query,updateDoc)
-      res.send(result)
-    })
+      };
+      const result = await roomsCollection.updateOne(query, updateDoc);
+      res.send(result);
+    });
 
-
-        // Post bookings
-        app.post("/bookings", async (req, res) => {
-          const newBooking = req.body;
-          // console.log(newBooking);
-          const result = await roomBookingCollection.insertOne(newBooking);
-          // console.log(result)
-          res.send(result);
-        });
+    // Post bookings
+    app.post("/bookings", async (req, res) => {
+      const newBooking = req.body;
+      // console.log(newBooking);
+      const result = await roomBookingCollection.insertOne(newBooking);
+      // console.log(result)
+      res.send(result);
+    });
 
     // booking
-    app.get('/bookings',verifyToken,async(req,res)=>{
+    app.get("/bookings", verifyToken, async (req, res) => {
       const cursor = roomBookingCollection.find();
       const result = await cursor.toArray();
       res.send(result);
-    })
+    });
     // get booking data using user email
-    app.get('/bookings/:email',verifyToken,async(req,res)=>{
+    app.get("/bookings/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       // console.log(email)
-      const query = {email : email};
+      const query = { email: email };
       const r = roomBookingCollection.find(query);
-      const result = await r.toArray()
+      const result = await r.toArray();
       // console.log(result)
       res.send(result);
-    })
+    });
 
     //get bookings by id
-    app.get('/booking/:room_id',verifyToken,async(req,res)=>{
+    app.get("/booking/:room_id", verifyToken, async (req, res) => {
       const id = req.params.room_id;
       // console.log(email)
       const query = { room_id: id };
-      const result =  await roomBookingCollection.findOne(query);
+      const result = await roomBookingCollection.findOne(query);
       // console.log(result)
       res.send(result);
-    })
+    });
 
     // delete booking by id
     app.delete("/bookings/:id", async (req, res) => {
@@ -189,40 +189,58 @@ async function run() {
     });
 
     // update by patch booking date
-    app.patch('/bookings/:id',async(req,res)=>{
+    app.patch("/bookings/:id", async (req, res) => {
       const id = req.params.id;
       // console.log(id)
       const date = req.body;
-      const query = { _id : new ObjectId(id) }
-      const updateDoc = { 
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
         $set: date,
-      }
-      const result = await roomBookingCollection.updateOne(query,updateDoc)
-      res.send(result)
-    })
-
-    //get review 
-    app.get('/reviews',async(req,res)=>{
-      const cursor = bookingReviewCollection.find().sort({timestamp:-1});
-      const result = await cursor.toArray();
-      res.send(result);
-    })
-    //get review by id
-    app.get("/review/:room_id", async (req, res) => {
-      const room_id = req.params.room_id;
-      const query = {room_id : room_id};
-      const cursor = bookingReviewCollection.find(query);
-      const result = await cursor.toArray()
+      };
+      const result = await roomBookingCollection.updateOne(query, updateDoc);
       res.send(result);
     });
 
-    // post booking review 
+    //get review
+    app.get("/reviews", async (req, res) => {
+      const cursor = bookingReviewCollection.find().sort({ timestamp: -1 });
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+    //get review by id
+    app.get("/review/:room_id", async (req, res) => {
+      const room_id = req.params.room_id;
+      const query = { room_id: room_id };
+      const cursor = bookingReviewCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    // post booking review
     app.post("/reviews", async (req, res) => {
       const newReview = req.body;
       // console.log(newReview);
       const result = await bookingReviewCollection.insertOne(newReview);
       // console.log(result)
       res.send(result);
+    });
+
+    // create-payment-intent
+    app.post("/create-payment-intent", verifyToken, async (req, res) => {
+      const price = req.body.price;
+      const priceInCent = parseFloat(price) * 100;
+      if (!price || priceInCent < 1) return;
+      // generate clientSecret
+      const { client_secret } = await stripe.paymentIntents.create({
+        amount: priceInCent,
+        currency: "usd",
+        // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      });
+      // send client secret as response
+      res.send({ clientSecret: client_secret });
     });
 
     // Send a ping to confirm a successful connection
