@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const port = process.env.PORT || 5000;
 const cors = require("cors");
+const nodemailer = require('nodemailer')
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
@@ -71,6 +72,44 @@ async function run() {
     const bookingReviewCollection = client
       .db("hotelBookingDB")
       .collection("reviews");
+
+      // send email
+const sendEmail = (emailAddress, emailData) => {
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    // host: 'smtp.gmail.com',
+    secure: true, // Use `true` for port 465, `false` for all other ports
+    port: 465,
+    auth: {
+      user: process.env.TRANSPORTER_EMAIL,
+      pass: process.env.TRANSPORTER_PASS,
+    },
+  })
+
+  // verify transporter
+  // verify connection configuration
+  transporter.verify(function (error, success) {
+    if (error) {
+      console.log(error)
+    } else {
+      console.log('Server is ready to take our messages')
+    }
+  })
+  const mailBody = {
+    from: `"Sunshine" <${process.env.TRANSPORTER_EMAIL}>`, // sender address
+    to: emailAddress, // list of receivers
+    subject: emailData.subject, // Subject line
+    html: emailData.message, // html body
+  }
+
+  transporter.sendMail(mailBody, (error, info) => {
+    if (error) {
+      console.log(error)
+    } else {
+      console.log('Email Sent: ' + info.response)
+    }
+  })
+}
 
     // auth related api
     app.post("/jwt", async (req, res) => {
@@ -149,6 +188,10 @@ async function run() {
       // console.log(newBooking);
       const result = await roomBookingCollection.insertOne(newBooking);
       // console.log(result)
+      sendEmail(newBooking.email, {
+        subject: 'Welcome to Sunshine Hotel!',
+        message: `Your bookig is booked successful`,
+      })
       res.send(result);
     });
 
